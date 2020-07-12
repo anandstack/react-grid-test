@@ -1,23 +1,79 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import "./App.css";
+import { FixedSizeList as WindowList, FixedSizeGrid as WindowGrid } from "react-window";
 
 function App() {
+  const [appData, setAppData] = useState([]);
+  const windowListRef = useRef(null)
+  const [rowIndex, setRowIndex] = useState(0)
+  const [columnIndex, setColumnIndex] = useState(0)
+
+  const sleep = (seconds) => {
+    return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+  };
+
+  const loadData = async () => {
+    console.log("loadData is called");
+    let length = appData.length;
+    let array = [];
+
+    for (let i = 1; i <= 500; ++i) {
+      array.push({ name: `Name ${i}`, id: i, status: i % 7 });
+    }
+    if (length > 0) await sleep(1);
+    setAppData((appdata) => [...appData, [...array]]);
+  };
+
+  useLayoutEffect(() => {
+    if (appData.length < 50) loadData();
+  }, [appData]);
+//windowListRef.current.scrollToItem(e.target.value)
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        Hello Mister <br />
+        <input type="number" onChange={(e) => { setRowIndex(e.target.value); }} />
+        <input type="number" onChange={(e) => { setColumnIndex(e.target.value); }} />
+        <button onClick={() => windowListRef.current.scrollToItem({rowIndex, columnIndex})}>Show</button>{" "}
+        <span>{appData && `${appData.length}`}</span>
+        <br />
+        {appData && (
+          <WindowGrid ref={windowListRef}
+            height={500}
+            width={600}
+            columnCount={500}
+            columnWidth={280}
+            rowCount={appData.length}
+            rowHeight={35}
+          >
+            {({ rowIndex, columnIndex, style }) => (
+              <div className={!(rowIndex % 2) ? "item-odd" : ""} style={style}>
+                {appData[rowIndex][columnIndex].id}. {appData[rowIndex][columnIndex].name} is{" "}
+                <span
+                  onClick={() =>
+                    (appData[rowIndex][columnIndex].status = !appData[rowIndex][columnIndex].status)
+                  }
+                >
+                  {appData[rowIndex][columnIndex].status ? "Active" : "Inactive"}
+                </span>
+              </div>
+            )}
+          </WindowGrid>
+        )}
+        <br />
+        <div>
+          {appData &&
+            appData.map((array) => array.map((dataObj) => <div key={dataObj.id}>{dataObj.id} <span
+              onClick={() =>
+                (dataObj.status = !dataObj.status)
+              }
+            >
+              {dataObj.status ? "Active" : "Inactive"}
+            </span>
+            </div>
+            )
+            )}
+          </div>
       </header>
     </div>
   );
